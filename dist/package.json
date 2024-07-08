@@ -1,0 +1,51 @@
+{
+    "name": "fn-context",
+    "type": "module",
+    "version": "0.0.1",
+    "description": "",
+    "comments": "",
+    "main": "./csj/index.ts",
+    "module": "./esm/index.ts",
+    "types": "./types/index.d.ts",
+    "exports": {
+        ".": {
+            "import": "./esm/index.ts",
+            "require": "./csj/index.ts",
+            "types": "./types/index.d.ts"
+        },
+        "./esm": {
+            "import": "./esm/index.ts",
+            "require": "./csj/index.ts",
+            "types": "./types/index.d.ts"
+        },
+        "./csj": {
+            "import": "./esm/index.ts",
+            "require": "./csj/index.ts",
+            "types": "./types/index.d.ts"
+        }
+    },
+    "browser": {},
+    "private": false,
+    "repository": "",
+    "bin": {
+        "fn-context": "./csj/index.js"
+    },
+    "scripts": {
+        "start": "node ./csj/index.js"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {},
+    "homepage": "",
+    "dependencies": {
+        "node-build-engine": "^1.3.2"
+    },
+    "devDependencies": {
+        "@types/node": "^20.14.10",
+        "esm": "^3.2.25",
+        "ts-node": "^10.9.2",
+        "tsconfig-paths": "^4.2.0",
+        "typescript": "^5.5.3"
+    }
+}

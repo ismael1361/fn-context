@@ -1,0 +1,14 @@
+# Exclude dev files from npm package
+src
+spec
+.eslintrc*.*
+tsconfig*.*
+.github
+.vscode
+test
+.prettierrc*.*
+create-package-files
+previous_src
+*.tgz
+*.log
+*.sqlite
