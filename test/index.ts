@@ -1,67 +1,96 @@
 import { createContext } from "../src";
 
-const DemoContext = createContext<
-	{
-		title: string;
-		id: number;
-	},
-	{
-		B: boolean;
-	}
->({
-	title: "",
-	id: Date.now(),
-});
+(async () => {
+	const DemoContext = createContext<
+		{
+			title: string;
+			id: number;
+		},
+		{
+			B: boolean;
+		}
+	>({
+		title: "",
+		id: Date.now(),
+	});
 
-async function A() {
-	const id = DemoContext.getContextId();
-	console.log(`Function A - ID: ${id}`);
-	await B();
-	await B();
-	await B();
-}
-
-async function B() {
-	if (DemoContext.cache.has("B")) {
-		return;
+	async function A() {
+		const id = DemoContext.getContextId();
+		console.log(`Function A - ID: ${id}`);
+		await B();
+		await B();
+		await B();
 	}
 
-	const id = DemoContext.getContextId();
+	async function B() {
+		if (DemoContext.cache.has("B")) {
+			return;
+		}
 
-	await new Promise((resolve) => setTimeout(resolve, 100 * Math.round(Math.random() * 100)));
+		const id = DemoContext.getContextId();
 
-	console.log(`Function B - ID: ${id}`);
+		await new Promise((resolve) => setTimeout(resolve, 100 * Math.round(Math.random() * 100)));
 
-	DemoContext.cache.set("B", true);
-	await C();
-}
+		console.log(`Function B - ID: ${id}`);
 
-async function C() {
-	const id = DemoContext.getContextId();
-	console.log(`Function C - ID: ${id}`);
-	console.log(DemoContext.value);
-}
+		DemoContext.cache.set("B", true);
+		await C();
+	}
 
-DemoContext.provider(A)();
+	async function C() {
+		const id = DemoContext.getContextId();
+		console.log(`Function C - ID: ${id}`);
+		console.log(DemoContext.value);
+	}
 
-DemoContext.provider(B, { title: "exemplo 02", id: Date.now() })();
+	await DemoContext.provider(A)();
 
-DemoContext.provider(A, { title: "exemplo 03", id: Date.now() })();
+	await DemoContext.provider(B, { title: "exemplo 02", id: Date.now() })();
 
-DemoContext.provider(C, { title: "exemplo 04", id: Date.now() })();
+	await DemoContext.provider(A, { title: "exemplo 03", id: Date.now() })();
 
-const context = createContext(0);
+	await DemoContext.provider(C, { title: "exemplo 04", id: Date.now() })();
+})();
 
-const someFunction = async () => {
-	context.value += 1;
-};
+(async () => {
+	const context = createContext(0);
 
-const initialize = context.provider(async function () {
-	someFunction();
-	someFunction();
-	someFunction();
-	someFunction();
-	console.log("context", context.value); // 4
-});
+	const someFunction = async () => {
+		context.value += 1;
+	};
 
-initialize();
+	const initialize = context.provider(async function () {
+		someFunction();
+		someFunction();
+		someFunction();
+		someFunction();
+		console.log("context", context.value); // 4
+	});
+
+	await initialize();
+})();
+
+(async () => {
+	const context = createContext<{
+		foo?: string;
+		bar?: string;
+		time?: number;
+	}>({ foo: "bar" });
+
+	const fn2 = async () => {
+		const valor = context.get();
+		context.set({ ...valor, time: Date.now() });
+	};
+
+	const fn3 = async () => {
+		return context.get();
+	};
+
+	const fn = async () => {
+		await fn2();
+		return await fn3();
+	};
+
+	context.provider(fn)().then(console.log); // { foo: 'bar', time: 1633661600000 }
+	context.provider(fn, { bar: "foo" })().then(console.log); // { bar: 'foo', time: 1633661601000 }
+})();

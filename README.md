@@ -1,6 +1,6 @@
 # fn-context
 
-O `fn-context` é um pacote que fornece um contexto de execução para funções. Ele é útil para funções que precisam de um contexto de execução, como funções que precisam de um contexto de banco de dados, funções que precisam de um contexto de autenticação, etc.
+O `fn-context` é um pacote que fornece um contexto de execução para funções no Node.js. Ele é útil para funções que precisam de um contexto de execução, como funções que precisam de um contexto de banco de dados, funções que precisam de um contexto de autenticação, etc.
 
 Imagine-se uma situação onde você tem uma função que precisa de um contexto unificado para cada processo de forma individual. O `fn-context` é a solução para isso. Ele permite que você defina um contexto de execução para cada função e fornece uma maneira de acessar esse contexto de execução em qualquer lugar da função ou qualquer outra função que você chame dentro do escopo do contexto inicializado anteriormente, como o `context.provider`.
 
@@ -113,6 +113,47 @@ const fn = context.provider(async () => {
 }, { foo: 'bar' });
 
 await fn();
+```
+
+É possível criar vários contextos de execução para a mesma função ou funções diferentes:
+
+```ts
+import { createContext } from 'fn-context';
+
+const context1 = createContext();
+const context2 = createContext();
+
+const fn = async () => {
+  console.log(context1.get()); // { foo: 'bar' }
+  console.log(context2.get()); // { bar: 'foo' }
+};
+
+await context2.provider(context1.provider(fn, { foo: 'bar' }), { bar: 'foo' })();
+```
+
+Uma coisa que é preciso resaltar é que, contextualizando uma função, o que se espera é que, o valor do contexto seja único para cada processo iniciado. Ou seja, se você chamar a função `fn` duas vezes, o contexto será diferente para as duas chamadas. Isso é útil para funções que precisam de um contexto de execução unificado para cada processo de forma individual.
+
+```ts
+import { createContext } from 'fn-context';
+
+const context = createContext({ foo: 'bar' });
+
+const fn2 = async ()=>{
+  const valor = context.get();
+  context.set({...valor, time: Date.now()});
+}
+
+const fn3 = async ()=>{
+  return context.get();
+}
+
+const fn = async ()=>{
+  await fn2();
+  return await fn3();
+};
+
+context.provider(fn)().then(console.log); // { foo: 'bar', time: 1633661600000 }
+context.provider(fn, { bar: 'foo' })().then(console.log); // { bar: 'foo', time: 1633661601000 }
 ```
 
 ## Instalação
