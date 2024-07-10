@@ -1,6 +1,6 @@
 {
 	"name": "fn-context",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"description": "O `fn-context` é um pacote que fornece um contexto de execução para funções no Node.js. Ele é útil para funções que precisam de um contexto de execução, como funções que precisam de um contexto de banco de dados, funções que precisam de um contexto de autenticação, etc.",
 	"private": false,
 	"main": "./src/index.ts",

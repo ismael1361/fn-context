@@ -218,14 +218,14 @@ await fn(); // O contexto não será acessível
 
 É possível realizar exportação e importação do contexto para outras funções:
 
-Arquivo `context.ts`:
 ```ts
+// context.ts
 import { createContext } from 'fn-context';
 export const context = createContext();
 ```
 
-Arquivo `fn.ts`:
 ```ts
+// fn.ts
 import { context } from './context';
 
 export const fn2 = async () => {
@@ -237,8 +237,8 @@ export const fn3 = async ()=>{
 }
 ```
 
-Arquivo `index.ts`:
 ```ts
+// index.ts
 import { context } from './context';
 import { fn2, fn3 } from './fn';
 
@@ -293,15 +293,15 @@ context.provider(fn, { bar: 'foo' })().then(console.log); // { bar: 'foo', time:
 
 O `fn-context` foi pensado para uso de contextualização em desenvolvimento de APIs, inclusivemente, para o Express.js. Ou seja, conxteualizar o request para uso em várias funções que não fazem parte do escopo do request. Exemplo:
 
-Arquivo `context.ts`:
 ```ts
+// context.ts
 import { createContext } from 'fn-context';
 
 export const reqContext = createContext({ req: null, res: null });
 ```
 
-Arquivo `controller.ts`:
 ```ts
+// controller.ts
 import { reqContext } from './context';
 
 export const getUser = async () => {
@@ -328,8 +328,8 @@ export const controller = async () => {
 };
 ```
 
-Arquivo `index.ts`:
 ```ts
+// index.ts
 import express from 'express';
 import { reqContext } from './context';
 import { controller } from './controller';
