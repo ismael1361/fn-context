@@ -1,13 +1,13 @@
 {
 	"name": "fn-context",
-	"version": "0.1.4",
+	"version": "0.2.0",
 	"description": "O `fn-context` é um pacote que fornece um contexto de execução para funções no Node.js. Ele é útil para funções que precisam de um contexto de execução, como funções que precisam de um contexto de banco de dados, funções que precisam de um contexto de autenticação, etc.",
 	"private": false,
 	"main": "./src/index.ts",
 	"scripts": {
 		"start": "node --loader ts-node/esm ./test/index.ts",
 		"build": "npx node-build-engine",
-		"npm:publish": "npm run build && cpy README.md dist && cd dist && npm publish --access public"
+		"npm:publish": "npm run build && cpy README.md dist && cpy resources dist && cd dist && npm publish --access public"
 	},
 	"author": "ISMAEL1361 <ismael1361@gmail.com> (https://github.com/ismael1361)",
 	"license": "MIT",

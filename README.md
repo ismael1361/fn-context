@@ -1,10 +1,145 @@
 # fn-context
 
-O `fn-context` é um pacote que fornece um contexto de execução para funções no Node.js. Ele é útil para funções que precisam de um contexto de execução, como funções que precisam de um contexto de banco de dados, funções que precisam de um contexto de autenticação, etc.
+O `fn-context` é um pacote que fornece um contexto de execução para funções no Node.js. Ele é útil para funções que precisam de um contexto de processo. Ou seja, não importa o quão profundo você chame uma função, o contexto de execução será o mesmo para cada processo de forma individual. O contexto é usado para gerenciar dados globais, por exemplo, estado global, serviços, configurações de usuário e muito mais.
 
-Imagine-se uma situação onde você tem uma função que precisa de um contexto unificado para cada processo de forma individual. O `fn-context` é a solução para isso. Ele permite que você defina um contexto de execução para cada função e fornece uma maneira de acessar esse contexto de execução em qualquer lugar da função ou qualquer outra função que você chame dentro do escopo do contexto inicializado anteriormente, como o `context.provider`.
+**Índice**
 
-## Exemplo:
+- [fn-context](#fn-context)
+  - [Como usar o contexto](#como-usar-o-contexto)
+    - [1. Criando o contexto](#1-criando-o-contexto)
+    - [2. Fornecendo o contexto](#2-fornecendo-o-contexto)
+    - [3. Consumindo o contexto](#3-consumindo-o-contexto)
+  - [Quando você precisa de contexto?](#quando-você-precisa-de-contexto)
+    - [Exemplo:](#exemplo)
+  - [Instalação](#instalação)
+  - [API](#api)
+    - [`createContext`](#createcontext)
+    - [`context.provider`](#contextprovider)
+    - [`context.get`](#contextget)
+    - [`context.set`](#contextset)
+    - [`context.id`](#contextid)
+    - [`context.value`](#contextvalue)
+    - [`context.cache`](#contextcache)
+    - [`context.cache.has`](#contextcachehas)
+    - [`context.cache.get`](#contextcacheget)
+    - [`context.cache.set`](#contextcacheset)
+    - [`context.cache.delete`](#contextcachedelete)
+    - [`context.cache.clear`](#contextcacheclear)
+
+## Como usar o contexto
+
+Usar o contexto no `fn-context` requer 3 etapas simples: criar o contexto, fornecer o contexto e consumir o contexto.
+
+### 1. Criando o contexto
+
+A função de fábrica integrada `createContext(default)` cria uma instância de contexto:
+
+```ts
+// context.js
+import { createContext } from 'react';
+
+export const Context = createContext('Default Value');
+```
+
+A função de fábrica aceita um argumento opcional: o valor padrão. Se você não fornecer um valor padrão, o valor padrão será `undefined`.
+
+### 2. Fornecendo o contexto
+
+A propriedade `provider` disponível na instância de contexto é usado para fornecer o contexto para as funções chamadas no escopo, não importa quão profundos eles estejam. 
+
+É uma função que requer dois argumentos:
+
+- `target`: a função que será executada.
+- `defaultValue`: o valor padrão do contexto para a função `target`, argumento opcional. Se não for definido, o valor padrão do contexto será o valor definido no `createContext`.
+
+```ts
+// index.js
+import { Context } from './context';
+
+const fn = async () => {
+  console.log(Context.get()); // 'Default Value'
+};
+
+await Context.provider(fn)();
+```
+
+O que é importante aqui é que todos as funções que desejam consumir o contexto mais tarde devem estar envoltos dentro do escopo `provider`.
+
+### 3. Consumindo o contexto
+
+Consumir o contexto pode ser feito de 2 maneiras.
+
+A primeira maneira recomendada, é usar a propriedade `get` disponível na instância de contexto:
+
+```ts
+// index.js
+import { Context } from './context';
+
+const fn = async () => {
+  console.log(Context.get()); // 'Default Value'
+};
+
+await Context.provider(fn)();
+```
+
+A segunda maneira é usar a propriedade `value` disponível na instância de contexto:
+
+```ts
+// index.js
+import { Context } from './context';
+
+const fn = async () => {
+  console.log(Context.value); // 'Default Value'
+};
+
+await Context.provider(fn)();
+```
+
+Em caso que deseja alterar o valor do contexto, você pode usar a propriedade `set` disponível na instância de contexto, ou, mudar diretamente o valor da propriedade `value`:
+
+```ts
+// index.js
+import { Context } from './context';
+
+const fn = async () => {
+  Context.set('New Value');
+  // ou
+  // Context.value = 'New Value';
+  console.log(Context.get()); // 'New Value'
+};
+
+await Context.provider(fn)();
+```
+
+![npm](./resources/img-01.png)
+
+Você pode ter quantos consumidores quiser para um único contexto. Se o valor do contexto mudar (alterando a propriedade `value` na instância de contexto), todos os consumidores recebem o valor atualizado. Se o valor do contexto mudar dentro de um consumidor, todos os outros consumidores recebem o valor atualizado.
+
+Se o consumidor não estiver envolto dentro do provedor, mas ainda tentar acessar o valor do contexto, então o valor do contexto será o valor padrão fornecido como argumento para a função fábrica `createContext(defaultValue)` que criou o contexto.
+
+## Quando você precisa de contexto?
+
+A principal ideia de usar o contexto é permitir que seus processos acessem dados globais e repassem quando esses dados globais forem alterados. O contexto resolve o problema de perfuração de props: quando você precisa passar props dos pais para os filhos.
+
+Você pode manter dentro do contexto:
+
+- estado global
+- configuração da aplicação
+- nome do usuário autenticado
+- configurações do usuário
+- idioma preferido
+- uma coleção de serviços
+- *... e muito mais*
+
+Por outro lado, você deve pensar cuidadosamente antes de decidir usar contexto em sua aplicação.
+
+Primeiro, integrar o contexto adiciona complexidade. Criar um contexto, envolver tudo em um provedor e usar `value` em cada consumidor — aumenta a complexidade.
+
+Em segundo lugar, adicionar contexto complica o teste unitário dos processos. Durante os testes, você terá que envolver as funções consumidores em um provedor de contexto. Incluindo as funções que são afetados indiretamente pelo contexto — os ancestrais dos consumidores de contexto!
+
+Imagine-se uma situação onde você tem uma função que precisa de um contexto unificado para cada processo de forma individual. O `fn-context` permite que você defina um contexto de execução para cada função e fornece uma maneira de acessar esse contexto de execução em qualquer lugar da função ou qualquer outra função que você chame dentro do escopo do contexto inicializado anteriormente, como o `context.provider`.
+
+### Exemplo:
 
 ```ts
 import { createContext } from 'fn-context';
