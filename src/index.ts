@@ -17,20 +17,26 @@ const runCallback = (callback: (data: any) => void, data: any) => {
 	}
 };
 
-const cloneValue = <T>(obj: T): T => {
+const cloneValue = <T>(obj: T, seen: Map<any, any> = new Map()): T => {
 	// Handle the 3 simple types, and null or undefined
-	if (null == obj || "object" != typeof obj) return obj;
+	if (obj === null || typeof obj !== "object") return obj;
 
 	// Handle Date
 	if (obj instanceof Date) {
 		return new Date(obj.getTime()) as any;
 	}
 
+	// Handle previously seen objects to avoid circular references
+	if (seen.has(obj)) {
+		return seen.get(obj);
+	}
+
 	// Handle Array
 	if (obj instanceof Array) {
 		const copy: any[] = [];
+		seen.set(obj, copy); // Add to seen map
 		for (let i = 0, len = obj.length; i < len; i++) {
-			copy[i] = cloneValue(obj[i]);
+			copy[i] = cloneValue(obj[i], seen);
 		}
 		return copy as any;
 	}
@@ -38,13 +44,16 @@ const cloneValue = <T>(obj: T): T => {
 	// Handle Object
 	if (obj instanceof Object) {
 		const copy: Record<string, any> = {};
+		seen.set(obj, copy); // Add to seen map
 		for (let attr in obj as any) {
-			if ((obj as any).hasOwnProperty(attr)) copy[attr] = cloneValue((obj as any)[attr]);
+			if ((obj as any).hasOwnProperty(attr)) {
+				copy[attr] = cloneValue((obj as any)[attr], seen);
+			}
 		}
 		return copy as any;
 	}
 
-	throw new Error("Unable to copy obj! Its type isn't supported.");
+	return obj;
 };
 
 interface SimpleEventEmitterProperty {
@@ -166,7 +175,7 @@ class Context<
 		[key: string]: any;
 	},
 > extends SimpleEventEmitter {
-	readonly id = randomUUID();
+	readonly constextId = randomUUID();
 	readonly processLength = new Map<string, number>();
 	readonly contexts = new Map<string, ContextValue<T, C>>();
 	readonly events: Record<
@@ -245,7 +254,7 @@ class Context<
 
 			let proxy: (this: any, t: (...args: A) => Promise<R> | R, ...a: A) => Promise<R> = () => Promise.resolve() as any;
 
-			const fnName = `_${kContextIdFunctionPrefix}_${self.id}_${contextId}_${Date.now()}__`;
+			const fnName = `_${kContextIdFunctionPrefix}_${self.constextId}_${contextId}_${Date.now()}__`;
 
 			eval(
 				`proxy = async function ${fnName}(target, ...args){
@@ -285,6 +294,14 @@ class Context<
 		this.set(value);
 	}
 
+	get id() {
+		return this.getId();
+	}
+
+	getId() {
+		return this.getContextId();
+	}
+
 	get cache() {
 		const id = this.getContextId();
 		const context = this.contexts.get(id);
@@ -294,7 +311,7 @@ class Context<
 		return context.cache;
 	}
 
-	getContextId(): string {
+	private getContextId(): string {
 		const stack = (new Error().stack ?? "").split("\n");
 
 		for (const frame of stack) {
@@ -310,7 +327,7 @@ class Context<
 				continue;
 			}
 
-			if (contextId !== this.id) {
+			if (contextId !== this.constextId) {
 				continue;
 			}
 

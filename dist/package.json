@@ -1,48 +1,61 @@
 {
     "name": "fn-context",
     "type": "module",
-    "version": "0.0.1",
-    "description": "",
+    "version": "0.1.4",
+    "description": "O `fn-context` é um pacote que fornece um contexto de execução para funções no Node.js. Ele é útil para funções que precisam de um contexto de execução, como funções que precisam de um contexto de banco de dados, funções que precisam de um contexto de autenticação, etc.",
     "comments": "",
-    "main": "./csj/index.ts",
-    "module": "./esm/index.ts",
+    "main": "./csj/index.js",
+    "module": "./esm/index.js",
     "types": "./types/index.d.ts",
     "exports": {
         ".": {
-            "import": "./esm/index.ts",
-            "require": "./csj/index.ts",
+            "import": "./esm/index.js",
+            "require": "./csj/index.js",
             "types": "./types/index.d.ts"
         },
         "./esm": {
-            "import": "./esm/index.ts",
-            "require": "./csj/index.ts",
+            "import": "./esm/index.js",
+            "require": "./csj/index.js",
             "types": "./types/index.d.ts"
         },
         "./csj": {
-            "import": "./esm/index.ts",
-            "require": "./csj/index.ts",
+            "import": "./esm/index.js",
+            "require": "./csj/index.js",
             "types": "./types/index.d.ts"
         }
     },
     "browser": {},
     "private": false,
-    "repository": "",
+    "repository": "github:ismael1361/fn-context",
     "bin": {
         "fn-context": "./csj/index.js"
     },
     "scripts": {
         "start": "node ./csj/index.js"
     },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "bugs": {},
-    "homepage": "",
+    "keywords": [
+        "node",
+        "context",
+        "function",
+        "execution",
+        "database",
+        "authentication",
+        "context execution",
+        "context function",
+        "context express.js"
+    ],
+    "author": "ISMAEL1361 <ismael1361@gmail.com> (https://github.com/ismael1361)",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/ismael1361/fn-context/issues"
+    },
+    "homepage": "https://github.com/ismael1361/fn-context#readme",
     "dependencies": {
-        "node-build-engine": "^1.3.2"
+        "node-build-engine": "^1.3.3"
     },
     "devDependencies": {
         "@types/node": "^20.14.10",
+        "cpy-cli": "^5.0.0",
         "esm": "^3.2.25",
         "ts-node": "^10.9.2",
         "tsconfig-paths": "^4.2.0",

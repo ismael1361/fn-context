@@ -15,32 +15,39 @@ const runCallback = (callback, data) => {
         console.error("Error in subscription callback", err);
     }
 };
-const cloneValue = (obj) => {
+const cloneValue = (obj, seen = new Map()) => {
     // Handle the 3 simple types, and null or undefined
-    if (null == obj || "object" != typeof obj)
+    if (obj === null || typeof obj !== "object")
         return obj;
     // Handle Date
     if (obj instanceof Date) {
         return new Date(obj.getTime());
     }
+    // Handle previously seen objects to avoid circular references
+    if (seen.has(obj)) {
+        return seen.get(obj);
+    }
     // Handle Array
     if (obj instanceof Array) {
         const copy = [];
+        seen.set(obj, copy); // Add to seen map
         for (let i = 0, len = obj.length; i < len; i++) {
-            copy[i] = cloneValue(obj[i]);
+            copy[i] = cloneValue(obj[i], seen);
         }
         return copy;
     }
     // Handle Object
     if (obj instanceof Object) {
         const copy = {};
+        seen.set(obj, copy); // Add to seen map
         for (let attr in obj) {
-            if (obj.hasOwnProperty(attr))
-                copy[attr] = cloneValue(obj[attr]);
+            if (obj.hasOwnProperty(attr)) {
+                copy[attr] = cloneValue(obj[attr], seen);
+            }
         }
         return copy;
     }
-    throw new Error("Unable to copy obj! Its type isn't supported.");
+    return obj;
 };
 class SimpleEventEmitter {
     subscriptions;
@@ -138,7 +145,7 @@ class ContextValue {
 }
 class Context extends SimpleEventEmitter {
     _defaultValue;
-    id = randomUUID();
+    constextId = randomUUID();
     processLength = new Map();
     contexts = new Map();
     events = {};
@@ -198,7 +205,7 @@ class Context extends SimpleEventEmitter {
             }
             self.processLength.set(contextId, (self.processLength.get(contextId) ?? 0) + 1);
             let proxy = () => Promise.resolve();
-            const fnName = `_${kContextIdFunctionPrefix}_${self.id}_${contextId}_${Date.now()}__`;
+            const fnName = `_${kContextIdFunctionPrefix}_${self.constextId}_${contextId}_${Date.now()}__`;
             eval(`proxy = async function ${fnName}(target, ...args){
                     return await Promise.race([target.apply(this, args)]);
                 }`);
@@ -229,6 +236,12 @@ class Context extends SimpleEventEmitter {
     set value(value) {
         this.set(value);
     }
+    get id() {
+        return this.getId();
+    }
+    getId() {
+        return this.getContextId();
+    }
     get cache() {
         const id = this.getContextId();
         const context = this.contexts.get(id);
@@ -248,7 +261,7 @@ class Context extends SimpleEventEmitter {
             if (typeof contextId !== "string" || contextId.trim() === "") {
                 continue;
             }
-            if (contextId !== this.id) {
+            if (contextId !== this.constextId) {
                 continue;
             }
             if (typeof id !== "string" || id.trim() === "") {

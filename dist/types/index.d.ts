@@ -29,7 +29,7 @@ declare class Context<T, C extends Object = {
     [key: string]: any;
 }> extends SimpleEventEmitter {
     private _defaultValue;
-    readonly id: string;
+    readonly constextId: string;
     readonly processLength: Map<string, number>;
     readonly contexts: Map<string, ContextValue<T, C>>;
     readonly events: Record<string, {
@@ -61,6 +61,8 @@ declare class Context<T, C extends Object = {
     provider<A extends any[], R = any | void>(target: (...args: A) => Promise<R> | R, defaultValue?: T): (this: any, ...args: A) => Promise<R>;
     get value(): T;
     set value(value: T);
+    get id(): string;
+    getId(): string;
     get cache(): {
         get: (id: keyof C) => C[keyof C] | undefined;
         set: (id: keyof C, value: C[keyof C]) => C[keyof C];
@@ -68,7 +70,7 @@ declare class Context<T, C extends Object = {
         clear: () => C;
         has: (id: string) => boolean;
     };
-    getContextId(): string;
+    private getContextId;
     get(): T;
     set(value: T): T;
     assignValue(value: T): T;

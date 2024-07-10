@@ -44,29 +44,38 @@ var runCallback = function runCallback(callback, data) {
   }
 };
 var cloneValue = function cloneValue(obj) {
+  var seen = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new Map();
   // Handle the 3 simple types, and null or undefined
-  if (null == obj || "object" != _typeof(obj)) return obj;
+  if (obj === null || _typeof(obj) !== "object") return obj;
   // Handle Date
   if (obj instanceof Date) {
     return new Date(obj.getTime());
   }
+  // Handle previously seen objects to avoid circular references
+  if (seen.has(obj)) {
+    return seen.get(obj);
+  }
   // Handle Array
   if (obj instanceof Array) {
     var copy = [];
+    seen.set(obj, copy); // Add to seen map
     for (var i = 0, len = obj.length; i < len; i++) {
-      copy[i] = cloneValue(obj[i]);
+      copy[i] = cloneValue(obj[i], seen);
     }
     return copy;
   }
   // Handle Object
   if (obj instanceof Object) {
     var _copy = {};
+    seen.set(obj, _copy); // Add to seen map
     for (var attr in obj) {
-      if (obj.hasOwnProperty(attr)) _copy[attr] = cloneValue(obj[attr]);
+      if (obj.hasOwnProperty(attr)) {
+        _copy[attr] = cloneValue(obj[attr], seen);
+      }
     }
     return _copy;
   }
-  throw new Error("Unable to copy obj! Its type isn't supported.");
+  return obj;
 };
 var SimpleEventEmitter = /*#__PURE__*/function () {
   function SimpleEventEmitter() {
@@ -201,7 +210,7 @@ var Context = /*#__PURE__*/function (_SimpleEventEmitter2) {
     _classCallCheck(this, Context);
     _this2 = _callSuper(this, Context);
     _defineProperty(_this2, "_defaultValue", void 0);
-    _defineProperty(_this2, "id", randomUUID());
+    _defineProperty(_this2, "constextId", randomUUID());
     _defineProperty(_this2, "processLength", new Map());
     _defineProperty(_this2, "contexts", new Map());
     _defineProperty(_this2, "events", {});
@@ -297,7 +306,7 @@ var Context = /*#__PURE__*/function (_SimpleEventEmitter2) {
               proxy = function proxy() {
                 return Promise.resolve();
               };
-              fnName = "_".concat(kContextIdFunctionPrefix, "_").concat(self.id, "_").concat(contextId, "_").concat(Date.now(), "__");
+              fnName = "_".concat(kContextIdFunctionPrefix, "_").concat(self.constextId, "_").concat(contextId, "_").concat(Date.now(), "__");
               eval("proxy = async function ".concat(fnName, "(target, ...args){\n                    return await Promise.race([target.apply(this, args)]);\n                }"));
               result = undefined, error = undefined;
               _context.prev = 7;
@@ -344,6 +353,16 @@ var Context = /*#__PURE__*/function (_SimpleEventEmitter2) {
       this.set(value);
     }
   }, {
+    key: "id",
+    get: function get() {
+      return this.getId();
+    }
+  }, {
+    key: "getId",
+    value: function getId() {
+      return this.getContextId();
+    }
+  }, {
     key: "cache",
     get: function get() {
       var id = this.getContextId();
@@ -372,7 +391,7 @@ var Context = /*#__PURE__*/function (_SimpleEventEmitter2) {
           if (typeof contextId !== "string" || contextId.trim() === "") {
             continue;
           }
-          if (contextId !== this.id) {
+          if (contextId !== this.constextId) {
             continue;
           }
           if (typeof id !== "string" || id.trim() === "") {

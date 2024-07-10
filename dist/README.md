@@ -162,7 +162,7 @@ Arquivo `context.ts`:
 ```ts
 import { createContext } from 'fn-context';
 
-export const reqContext = createContext({ req: null, res: null });
+export const reqContext = createContext();
 ```
 
 Arquivo `controller.ts`:
@@ -174,7 +174,7 @@ export const getUser = async () => {
   
   if(!req.body.user){
     req.body.user = "admin";
-    req.body.id = reqContext.id;
+    req.body.id = reqContext.getContextId();
   }
   
   return req.body.user;
@@ -201,10 +201,10 @@ import { controller } from './controller';
 
 const app = express();
 
-app.get('/', reqContext.provider(async (req, res) => {
+app.get('/*', reqContext.provider(async (req, res) => {
   reqContext.set({req, res});
   res.json(await controller());
-}));
+}, { req: null, res: null }));
 
 app.listen(3000, () => {
   console.log('Server is running on port 3000');
@@ -310,25 +310,6 @@ import { createContext } from 'fn-context';
 const context = createContext();
 
 context.set({ foo: 'bar' });
-```
-
-### `context.id`
-
-```ts
-/**
- * @returns O ID do contexto.
- */
-id: string;
-```
-
-Propriedade responsável por obter o ID do contexto.
-
-```ts
-import { createContext } from 'fn-context';
-
-const context = createContext();
-
-console.log(context.id);
 ```
 
 ### `context.value`

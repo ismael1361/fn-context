@@ -15,8 +15,7 @@ import { createContext } from "../src";
 	});
 
 	async function A() {
-		const id = DemoContext.getContextId();
-		console.log(`Function A - ID: ${id}`);
+		console.log(`Function A - ID: ${DemoContext.id}`);
 		await B();
 		await B();
 		await B();
@@ -27,19 +26,16 @@ import { createContext } from "../src";
 			return;
 		}
 
-		const id = DemoContext.getContextId();
-
 		await new Promise((resolve) => setTimeout(resolve, 100 * Math.round(Math.random() * 100)));
 
-		console.log(`Function B - ID: ${id}`);
+		console.log(`Function B - ID: ${DemoContext.id}`);
 
 		DemoContext.cache.set("B", true);
 		await C();
 	}
 
 	async function C() {
-		const id = DemoContext.getContextId();
-		console.log(`Function C - ID: ${id}`);
+		console.log(`Function C - ID: ${DemoContext.id}`);
 		console.log(DemoContext.value);
 	}
 
