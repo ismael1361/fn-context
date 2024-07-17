@@ -376,6 +376,7 @@ var Context = /*#__PURE__*/function (_SimpleEventEmitter2) {
     key: "getContextId",
     value: function getContextId() {
       var _Error$stack;
+      Error.stackTraceLimit = Infinity;
       var stack = ((_Error$stack = new Error().stack) !== null && _Error$stack !== void 0 ? _Error$stack : "").split("\n");
       var _iterator = _createForOfIteratorHelper(stack),
         _step;

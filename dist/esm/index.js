@@ -251,6 +251,7 @@ class Context extends SimpleEventEmitter {
         return context.cache;
     }
     getContextId() {
+        Error.stackTraceLimit = Infinity;
         const stack = (new Error().stack ?? "").split("\n");
         for (const frame of stack) {
             const match = frame.match(kContextIdRegex);

@@ -312,6 +312,7 @@ class Context<
 	}
 
 	private getContextId(): string {
+		Error.stackTraceLimit = Infinity;
 		const stack = (new Error().stack ?? "").split("\n");
 
 		for (const frame of stack) {
