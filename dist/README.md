@@ -14,6 +14,7 @@ O `fn-context` é um pacote que fornece um contexto de execução para funções
   - [Instalação](#instalação)
   - [API](#api)
     - [`createContext`](#createcontext)
+    - [Options](#options)
     - [`context.provider`](#contextprovider)
     - [`context.get`](#contextget)
     - [`context.set`](#contextset)
@@ -378,6 +379,16 @@ Propriedade responsável por criar um novo contexto de execução.
 import { createContext } from 'fn-context';
 
 const context = createContext();
+```
+
+### Options
+
+- `individual`: Se definido como `true`, o contexto será individual para cada processo iniciado. Ou seja, se você chamar a função `fn` duas vezes, uma dentro da outra, mas com o mesmo contexto, o conteúdo do contexto será diferente para as duas chamadas. Isso é útil uma situação que precise de um contexto diferente do antecessor. Se como `false`, será considerado o conteúdo do contexto do antecessor. Útil em situações em que precisa de um contexto global para todas as funções chamadas. Por padrão, é `false`.
+
+```ts
+import { createContext } from 'fn-context';
+
+const context = createContext({ foo: 'bar' }, { individual: true });
 ```
 
 ### `context.provider`

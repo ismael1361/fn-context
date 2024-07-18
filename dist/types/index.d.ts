@@ -25,6 +25,9 @@ declare class ContextValue<T, C extends Object> {
         has: (id: string) => boolean;
     };
 }
+interface ContextOptions {
+    individual: boolean;
+}
 declare class Context<T, C extends Object = {
     [key: string]: any;
 }> extends SimpleEventEmitter {
@@ -36,7 +39,8 @@ declare class Context<T, C extends Object = {
         event: string;
         callback: any;
     }[]>;
-    constructor(_defaultValue: T);
+    private readonly options;
+    constructor(_defaultValue: T, options?: Partial<ContextOptions>);
     get defaultValue(): T;
     on<D = {
         contextId: string;
@@ -83,6 +87,7 @@ declare class Context<T, C extends Object = {
  * @template C - O tipo do escopo cache do contexto, que deve ser um objeto. Por padrão, é um objeto genérico com chaves do tipo string e valores de qualquer tipo. Útil apenas em casos específicos onde você deseja armazenar valores em cache no contexto.
  *
  * @param {T} defaultValue - O valor padrão do contexto.
+ * @param {Partial<ContextOptions>} options - Opções para o contexto.
  * @returns {Context<T, C>} Uma nova instância de `Context` com o valor padrão fornecido.
  
  * @example
@@ -104,6 +109,6 @@ declare class Context<T, C extends Object = {
  */
 export declare function createContext<T, C extends Object = {
     [key: string]: any;
-}>(defaultValue: T): Context<T, C>;
+}>(defaultValue: T, options?: Partial<ContextOptions>): Context<T, C>;
 export default createContext;
 //# sourceMappingURL=index.d.ts.map

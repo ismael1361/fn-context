@@ -143,15 +143,26 @@ class ContextValue {
         };
     }
 }
+const joinObject = (obj, partial) => {
+    const newObj = { ...obj };
+    for (const key in partial) {
+        if (partial.hasOwnProperty(key)) {
+            newObj[key] = partial[key] ?? obj[key];
+        }
+    }
+    return newObj;
+};
 class Context extends SimpleEventEmitter {
     _defaultValue;
     constextId = randomUUID();
     processLength = new Map();
     contexts = new Map();
     events = {};
-    constructor(_defaultValue) {
+    options;
+    constructor(_defaultValue, options = {}) {
         super();
         this._defaultValue = _defaultValue;
+        this.options = joinObject({ individual: false }, options);
     }
     get defaultValue() {
         return cloneValue(this._defaultValue);
@@ -199,7 +210,7 @@ class Context extends SimpleEventEmitter {
     provider(target, defaultValue = this.defaultValue) {
         const self = this;
         return async function (...args) {
-            const contextId = self.getContextId();
+            const contextId = self.options.individual ? randomUUID() : self.getContextId();
             if (!self.contexts.has(contextId)) {
                 self.contexts.set(contextId, new ContextValue(defaultValue ?? this._defaultValue));
             }
@@ -333,6 +344,7 @@ class Context extends SimpleEventEmitter {
  * @template C - O tipo do escopo cache do contexto, que deve ser um objeto. Por padrão, é um objeto genérico com chaves do tipo string e valores de qualquer tipo. Útil apenas em casos específicos onde você deseja armazenar valores em cache no contexto.
  *
  * @param {T} defaultValue - O valor padrão do contexto.
+ * @param {Partial<ContextOptions>} options - Opções para o contexto.
  * @returns {Context<T, C>} Uma nova instância de `Context` com o valor padrão fornecido.
  
  * @example
@@ -352,8 +364,8 @@ class Context extends SimpleEventEmitter {
  *
  * initialize();
  */
-export function createContext(defaultValue) {
-    return new Context(defaultValue);
+export function createContext(defaultValue, options = {}) {
+    return new Context(defaultValue, options);
 }
 export default createContext;
 //# sourceMappingURL=index.js.map

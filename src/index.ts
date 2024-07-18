@@ -169,6 +169,20 @@ class ContextValue<T, C extends Object> {
 	}
 }
 
+interface ContextOptions {
+	individual: boolean;
+}
+
+const joinObject = <T extends Record<string, any>>(obj: T, partial: Partial<T>): T => {
+	const newObj: T = { ...obj };
+	for (const key in partial) {
+		if (partial.hasOwnProperty(key)) {
+			newObj[key] = partial[key] ?? obj[key];
+		}
+	}
+	return newObj;
+};
+
 class Context<
 	T,
 	C extends Object = {
@@ -185,9 +199,11 @@ class Context<
 			callback: any;
 		}[]
 	> = {};
+	private readonly options: ContextOptions;
 
-	constructor(private _defaultValue: T) {
+	constructor(private _defaultValue: T, options: Partial<ContextOptions> = {}) {
 		super();
+		this.options = joinObject<ContextOptions>({ individual: false }, options);
 	}
 
 	get defaultValue() {
@@ -245,7 +261,7 @@ class Context<
 	provider<A extends any[], R = any | void>(target: (...args: A) => Promise<R> | R, defaultValue: T = this.defaultValue) {
 		const self = this;
 		return async function (this: any, ...args: A) {
-			const contextId = self.getContextId();
+			const contextId = self.options.individual ? randomUUID() : self.getContextId();
 
 			if (!self.contexts.has(contextId)) {
 				self.contexts.set(contextId, new ContextValue(defaultValue ?? this._defaultValue));
@@ -413,6 +429,7 @@ class Context<
  * @template C - O tipo do escopo cache do contexto, que deve ser um objeto. Por padrão, é um objeto genérico com chaves do tipo string e valores de qualquer tipo. Útil apenas em casos específicos onde você deseja armazenar valores em cache no contexto.
  * 
  * @param {T} defaultValue - O valor padrão do contexto.
+ * @param {Partial<ContextOptions>} options - Opções para o contexto.
  * @returns {Context<T, C>} Uma nova instância de `Context` com o valor padrão fornecido.
  
  * @example
@@ -437,8 +454,8 @@ export function createContext<
 	C extends Object = {
 		[key: string]: any;
 	},
->(defaultValue: T): Context<T, C> {
-	return new Context<T, C>(defaultValue);
+>(defaultValue: T, options: Partial<ContextOptions> = {}): Context<T, C> {
+	return new Context<T, C>(defaultValue, options);
 }
 
 export default createContext;

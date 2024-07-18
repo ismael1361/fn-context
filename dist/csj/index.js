@@ -20,6 +20,8 @@ function _superPropBase(t, o) { for (; !{}.hasOwnProperty.call(t, o) && null !==
 function _getPrototypeOf(t) { return _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function (t) { return t.__proto__ || Object.getPrototypeOf(t); }, _getPrototypeOf(t); }
 function _inherits(t, e) { if ("function" != typeof e && null !== e) throw new TypeError("Super expression must either be null or a function"); t.prototype = Object.create(e && e.prototype, { constructor: { value: t, writable: !0, configurable: !0 } }), Object.defineProperty(t, "prototype", { writable: !1 }), e && _setPrototypeOf(t, e); }
 function _setPrototypeOf(t, e) { return _setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function (t, e) { return t.__proto__ = e, t; }, _setPrototypeOf(t, e); }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function _classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
 function _defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, _toPropertyKey(o.key), o); } }
 function _createClass(e, r, t) { return r && _defineProperties(e.prototype, r), t && _defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
@@ -204,9 +206,20 @@ var ContextValue = /*#__PURE__*/function () {
     }
   }]);
 }();
+var joinObject = function joinObject(obj, partial) {
+  var newObj = _objectSpread({}, obj);
+  for (var key in partial) {
+    if (partial.hasOwnProperty(key)) {
+      var _partial$key;
+      newObj[key] = (_partial$key = partial[key]) !== null && _partial$key !== void 0 ? _partial$key : obj[key];
+    }
+  }
+  return newObj;
+};
 var Context = /*#__PURE__*/function (_SimpleEventEmitter2) {
   function Context(_defaultValue) {
     var _this2;
+    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
     _classCallCheck(this, Context);
     _this2 = _callSuper(this, Context);
     _defineProperty(_this2, "_defaultValue", void 0);
@@ -214,7 +227,11 @@ var Context = /*#__PURE__*/function (_SimpleEventEmitter2) {
     _defineProperty(_this2, "processLength", new Map());
     _defineProperty(_this2, "contexts", new Map());
     _defineProperty(_this2, "events", {});
+    _defineProperty(_this2, "options", void 0);
     _this2._defaultValue = _defaultValue;
+    _this2.options = joinObject({
+      individual: false
+    }, options);
     return _this2;
   }
   _inherits(Context, _SimpleEventEmitter2);
@@ -298,7 +315,7 @@ var Context = /*#__PURE__*/function (_SimpleEventEmitter2) {
         return _regeneratorRuntime().wrap(function _callee$(_context) {
           while (1) switch (_context.prev = _context.next) {
             case 0:
-              contextId = self.getContextId();
+              contextId = self.options.individual ? randomUUID() : self.getContextId();
               if (!self.contexts.has(contextId)) {
                 self.contexts.set(contextId, new ContextValue(defaultValue !== null && defaultValue !== void 0 ? defaultValue : this._defaultValue));
               }
@@ -479,6 +496,7 @@ var Context = /*#__PURE__*/function (_SimpleEventEmitter2) {
  * @template C - O tipo do escopo cache do contexto, que deve ser um objeto. Por padrão, é um objeto genérico com chaves do tipo string e valores de qualquer tipo. Útil apenas em casos específicos onde você deseja armazenar valores em cache no contexto.
  *
  * @param {T} defaultValue - O valor padrão do contexto.
+ * @param {Partial<ContextOptions>} options - Opções para o contexto.
  * @returns {Context<T, C>} Uma nova instância de `Context` com o valor padrão fornecido.
  
  * @example
@@ -499,6 +517,7 @@ var Context = /*#__PURE__*/function (_SimpleEventEmitter2) {
  * initialize();
  */
 function createContext(defaultValue) {
-  return new Context(defaultValue);
+  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  return new Context(defaultValue, options);
 }
 var _default = exports.default = createContext;
