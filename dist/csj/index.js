@@ -170,7 +170,7 @@ var ContextValue = /*#__PURE__*/function () {
     _classCallCheck(this, ContextValue);
     _defineProperty(this, "_value", void 0);
     _defineProperty(this, "_cache", void 0);
-    this._value = cloneValue(value);
+    this._value = value;
     this._cache = {};
   }
   return _createClass(ContextValue, [{
@@ -316,7 +316,7 @@ var Context = /*#__PURE__*/function (_SimpleEventEmitter2) {
               }
               contextId = self.options.individual ? randomUUID() : self.getContextId();
               if (!self.contexts.has(contextId)) {
-                self.contexts.set(contextId, new ContextValue(defaultValue !== null && defaultValue !== void 0 ? defaultValue : self._defaultValue));
+                self.contexts.set(contextId, new ContextValue(defaultValue !== null && defaultValue !== void 0 ? defaultValue : this.defaultValue));
               }
               self.processLength.set(contextId, ((_self$processLength$g = self.processLength.get(contextId)) !== null && _self$processLength$g !== void 0 ? _self$processLength$g : 0) + 1);
               return _context3.abrupt("return", new Promise( /*#__PURE__*/function () {
@@ -385,7 +385,7 @@ var Context = /*#__PURE__*/function (_SimpleEventEmitter2) {
             case "end":
               return _context3.stop();
           }
-        }, _callee3);
+        }, _callee3, this);
       }));
     }
   }, {

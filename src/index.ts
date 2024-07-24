@@ -146,7 +146,7 @@ class ContextValue<T, C extends Object> {
 	private _cache: C;
 
 	constructor(value: T) {
-		this._value = cloneValue(value);
+		this._value = value;
 		this._cache = {} as C;
 	}
 
@@ -267,7 +267,7 @@ class Context<
 			const contextId = self.options.individual ? randomUUID() : self.getContextId();
 
 			if (!self.contexts.has(contextId)) {
-				self.contexts.set(contextId, new ContextValue(defaultValue ?? self._defaultValue));
+				self.contexts.set(contextId, new ContextValue(defaultValue ?? this.defaultValue));
 			}
 			self.processLength.set(contextId, (self.processLength.get(contextId) ?? 0) + 1);
 

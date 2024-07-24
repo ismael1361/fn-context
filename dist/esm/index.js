@@ -124,7 +124,7 @@ class ContextValue {
     _value;
     _cache;
     constructor(value) {
-        this._value = cloneValue(value);
+        this._value = value;
         this._cache = {};
     }
     get value() {
@@ -215,7 +215,7 @@ class Context extends SimpleEventEmitter {
         return async function (...args) {
             const contextId = self.options.individual ? randomUUID() : self.getContextId();
             if (!self.contexts.has(contextId)) {
-                self.contexts.set(contextId, new ContextValue(defaultValue ?? self._defaultValue));
+                self.contexts.set(contextId, new ContextValue(defaultValue ?? this.defaultValue));
             }
             self.processLength.set(contextId, (self.processLength.get(contextId) ?? 0) + 1);
             return new Promise(async (resolve, reject) => {
