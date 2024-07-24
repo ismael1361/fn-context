@@ -1,5 +1,6 @@
 const kContextIdFunctionPrefix = "_context_id_";
 const kContextIdRegex = new RegExp(`_${kContextIdFunctionPrefix}_([0-9a-zA-Z]{32})_([0-9a-zA-Z]{32})_(\\d+)__`);
+import cls from "cls-hooked";
 
 const randomUUID = (): string => {
 	return "xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx".replace(/[xy]/g, function (c) {
@@ -19,7 +20,7 @@ const runCallback = (callback: (data: any) => void, data: any) => {
 
 const cloneValue = <T>(obj: T, seen: Map<any, any> = new Map()): T => {
 	// Handle the 3 simple types, and null or undefined
-	if (obj === null || typeof obj !== "object") return obj;
+	if (!obj || obj === null || typeof obj !== "object") return obj;
 
 	// Handle Date
 	if (obj instanceof Date) {
@@ -200,10 +201,12 @@ class Context<
 		}[]
 	> = {};
 	private readonly options: ContextOptions;
+	private ns: cls.Namespace<Record<string, any>>;
 
 	constructor(private _defaultValue: T, options: Partial<ContextOptions> = {}) {
 		super();
 		this.options = joinObject<ContextOptions>({ individual: false }, options);
+		this.ns = cls.createNamespace(this.constextId);
 	}
 
 	get defaultValue() {
@@ -264,40 +267,43 @@ class Context<
 			const contextId = self.options.individual ? randomUUID() : self.getContextId();
 
 			if (!self.contexts.has(contextId)) {
-				self.contexts.set(contextId, new ContextValue(defaultValue ?? this._defaultValue));
+				self.contexts.set(contextId, new ContextValue(defaultValue ?? self._defaultValue));
 			}
 			self.processLength.set(contextId, (self.processLength.get(contextId) ?? 0) + 1);
 
-			const fnName = `_${kContextIdFunctionPrefix}_${self.constextId}_${contextId}_${Date.now()}__`;
+			return new Promise<R>(async (resolve, reject) => {
+				let result: any = undefined,
+					error: any = undefined;
 
-			const proxy: (self: any, t: (...args: A) => Promise<R> | R, ...a: A) => Promise<R> =
-				new Function(`return function ${fnName}(self, target) {
-                    return Promise.race([target.apply(self, Array.from(arguments).slice(2))]);
-                };`)();
+				await self.ns.runPromise(async () => {
+					self.ns.set("contextId", contextId);
 
-			let result: R | undefined = undefined,
-				error: Error | undefined = undefined;
+					try {
+						result = await Promise.race([target.apply(this, args)]);
+					} catch (e) {
+						error = new Error(e as any);
+					}
+				});
 
-			try {
-				result = await proxy(this, target, ...args);
-			} catch (e) {
-				error = new Error(e as any);
-			}
+				const length = self.processLength.get(contextId) ?? 0;
+				if (length <= 1) {
+					setTimeout(() => {
+						self.contexts.delete(contextId);
+						self.processLength.delete(contextId);
+						(self.events[contextId] ?? []).splice(0).forEach(({ event, callback }) => {
+							self.off(event as any, callback);
+						});
+					}, 1000);
+				} else {
+					self.processLength.set(contextId, length - 1);
+				}
 
-			const length = self.processLength.get(contextId) ?? 0;
-			if (length <= 1) {
-				setTimeout(() => {
-					self.contexts.delete(contextId);
-					self.processLength.delete(contextId);
-					(self.events[contextId] ?? []).splice(0).forEach(({ event, callback }) => {
-						self.off(event as any, callback);
-					});
-				}, 15000);
-			} else {
-				self.processLength.set(contextId, length - 1);
-			}
-
-			return error instanceof Error ? Promise.reject(error) : (result as R);
+				if (error instanceof Error) {
+					reject(error);
+				} else {
+					resolve(result as R);
+				}
+			});
 		};
 	}
 
@@ -328,34 +334,7 @@ class Context<
 	}
 
 	private getContextId(): string {
-		Error.stackTraceLimit = Infinity;
-		const stack = (new Error().stack ?? "").split("\n");
-
-		for (const frame of stack) {
-			const match = frame.match(kContextIdRegex);
-			if (!match) {
-				continue;
-			}
-
-			const contextId = match[1],
-				id = match[2];
-
-			if (typeof contextId !== "string" || contextId.trim() === "") {
-				continue;
-			}
-
-			if (contextId !== this.constextId) {
-				continue;
-			}
-
-			if (typeof id !== "string" || id.trim() === "") {
-				continue;
-			}
-
-			return id;
-		}
-
-		return randomUUID();
+		return this.ns.active ? this.ns.get("contextId") : randomUUID();
 	}
 
 	get(): T {

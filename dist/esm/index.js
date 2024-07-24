@@ -1,5 +1,6 @@
 const kContextIdFunctionPrefix = "_context_id_";
 const kContextIdRegex = new RegExp(`_${kContextIdFunctionPrefix}_([0-9a-zA-Z]{32})_([0-9a-zA-Z]{32})_(\\d+)__`);
+import cls from "cls-hooked";
 const randomUUID = () => {
     return "xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx".replace(/[xy]/g, function (c) {
         const r = (Math.random() * 16) | 0;
@@ -17,7 +18,7 @@ const runCallback = (callback, data) => {
 };
 const cloneValue = (obj, seen = new Map()) => {
     // Handle the 3 simple types, and null or undefined
-    if (obj === null || typeof obj !== "object")
+    if (!obj || obj === null || typeof obj !== "object")
         return obj;
     // Handle Date
     if (obj instanceof Date) {
@@ -159,10 +160,12 @@ class Context extends SimpleEventEmitter {
     contexts = new Map();
     events = {};
     options;
+    ns;
     constructor(_defaultValue, options = {}) {
         super();
         this._defaultValue = _defaultValue;
         this.options = joinObject({ individual: false }, options);
+        this.ns = cls.createNamespace(this.constextId);
     }
     get defaultValue() {
         return cloneValue(this._defaultValue);
@@ -212,34 +215,40 @@ class Context extends SimpleEventEmitter {
         return async function (...args) {
             const contextId = self.options.individual ? randomUUID() : self.getContextId();
             if (!self.contexts.has(contextId)) {
-                self.contexts.set(contextId, new ContextValue(defaultValue ?? this._defaultValue));
+                self.contexts.set(contextId, new ContextValue(defaultValue ?? self._defaultValue));
             }
             self.processLength.set(contextId, (self.processLength.get(contextId) ?? 0) + 1);
-            const fnName = `_${kContextIdFunctionPrefix}_${self.constextId}_${contextId}_${Date.now()}__`;
-            const proxy = new Function(`return function ${fnName}(self, target) {
-                    return Promise.race([target.apply(self, Array.from(arguments).slice(2))]);
-                };`)();
-            let result = undefined, error = undefined;
-            try {
-                result = await proxy(this, target, ...args);
-            }
-            catch (e) {
-                error = new Error(e);
-            }
-            const length = self.processLength.get(contextId) ?? 0;
-            if (length <= 1) {
-                setTimeout(() => {
-                    self.contexts.delete(contextId);
-                    self.processLength.delete(contextId);
-                    (self.events[contextId] ?? []).splice(0).forEach(({ event, callback }) => {
-                        self.off(event, callback);
-                    });
-                }, 15000);
-            }
-            else {
-                self.processLength.set(contextId, length - 1);
-            }
-            return error instanceof Error ? Promise.reject(error) : result;
+            return new Promise(async (resolve, reject) => {
+                let result = undefined, error = undefined;
+                await self.ns.runPromise(async () => {
+                    self.ns.set("contextId", contextId);
+                    try {
+                        result = await Promise.race([target.apply(this, args)]);
+                    }
+                    catch (e) {
+                        error = new Error(e);
+                    }
+                });
+                const length = self.processLength.get(contextId) ?? 0;
+                if (length <= 1) {
+                    setTimeout(() => {
+                        self.contexts.delete(contextId);
+                        self.processLength.delete(contextId);
+                        (self.events[contextId] ?? []).splice(0).forEach(({ event, callback }) => {
+                            self.off(event, callback);
+                        });
+                    }, 1000);
+                }
+                else {
+                    self.processLength.set(contextId, length - 1);
+                }
+                if (error instanceof Error) {
+                    reject(error);
+                }
+                else {
+                    resolve(result);
+                }
+            });
         };
     }
     get value() {
@@ -264,26 +273,7 @@ class Context extends SimpleEventEmitter {
         return context.cache;
     }
     getContextId() {
-        Error.stackTraceLimit = Infinity;
-        const stack = (new Error().stack ?? "").split("\n");
-        for (const frame of stack) {
-            const match = frame.match(kContextIdRegex);
-            if (!match) {
-                continue;
-            }
-            const contextId = match[1], id = match[2];
-            if (typeof contextId !== "string" || contextId.trim() === "") {
-                continue;
-            }
-            if (contextId !== this.constextId) {
-                continue;
-            }
-            if (typeof id !== "string" || id.trim() === "") {
-                continue;
-            }
-            return id;
-        }
-        return randomUUID();
+        return this.ns.active ? this.ns.get("contextId") : randomUUID();
     }
     get() {
         const id = this.getContextId();

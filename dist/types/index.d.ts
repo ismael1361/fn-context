@@ -40,6 +40,7 @@ declare class Context<T, C extends Object = {
         callback: any;
     }[]>;
     private readonly options;
+    private ns;
     constructor(_defaultValue: T, options?: Partial<ContextOptions>);
     get defaultValue(): T;
     on<D = {
