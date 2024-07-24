@@ -215,25 +215,26 @@ class Context extends SimpleEventEmitter {
                 self.contexts.set(contextId, new ContextValue(defaultValue ?? this._defaultValue));
             }
             self.processLength.set(contextId, (self.processLength.get(contextId) ?? 0) + 1);
-            let proxy = () => Promise.resolve();
             const fnName = `_${kContextIdFunctionPrefix}_${self.constextId}_${contextId}_${Date.now()}__`;
-            eval(`proxy = async function ${fnName}(target, ...args){
-                    return await Promise.race([target.apply(this, args)]);
-                }`);
+            const proxy = new Function(`return function ${fnName}(self, target) {
+                    return Promise.race([target.apply(self, Array.from(arguments).slice(2))]);
+                };`)();
             let result = undefined, error = undefined;
             try {
-                result = await proxy.call(this, target, ...args);
+                result = await proxy(this, target, ...args);
             }
             catch (e) {
                 error = new Error(e);
             }
             const length = self.processLength.get(contextId) ?? 0;
             if (length <= 1) {
-                self.contexts.delete(contextId);
-                self.processLength.delete(contextId);
-                (self.events[contextId] ?? []).splice(0).forEach(({ event, callback }) => {
-                    self.off(event, callback);
-                });
+                setTimeout(() => {
+                    self.contexts.delete(contextId);
+                    self.processLength.delete(contextId);
+                    (self.events[contextId] ?? []).splice(0).forEach(({ event, callback }) => {
+                        self.off(event, callback);
+                    });
+                }, 15000);
             }
             else {
                 self.processLength.set(contextId, length - 1);
@@ -242,7 +243,8 @@ class Context extends SimpleEventEmitter {
         };
     }
     get value() {
-        return this.get();
+        const id = this.getContextId();
+        return this.contexts.get(id)?.value ?? this.defaultValue;
     }
     set value(value) {
         this.set(value);

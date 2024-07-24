@@ -1,4 +1,4 @@
-interface SimpleEventEmitterProperty {
+export interface SimpleEventEmitterProperty {
     stop: () => void;
 }
 declare class SimpleEventEmitter {
@@ -25,7 +25,7 @@ declare class ContextValue<T, C extends Object> {
         has: (id: string) => boolean;
     };
 }
-interface ContextOptions {
+export interface ContextOptions {
     individual: boolean;
 }
 declare class Context<T, C extends Object = {
@@ -80,6 +80,9 @@ declare class Context<T, C extends Object = {
     assignValue(value: T): T;
     proxyValue(): T;
 }
+export type createContext<T, C extends Object = {
+    [key: string]: any;
+}> = Pick<Context<T, C>, "defaultValue" | "provider" | "value" | "id" | "getId" | "cache" | "get" | "set" | "assignValue" | "proxyValue">;
 /**
  * Cria um novo contexto com um valor padrão.
  *
@@ -109,6 +112,6 @@ declare class Context<T, C extends Object = {
  */
 export declare function createContext<T, C extends Object = {
     [key: string]: any;
-}>(defaultValue: T, options?: Partial<ContextOptions>): Context<T, C>;
+}>(defaultValue: T, options?: Partial<ContextOptions>): createContext<T, C>;
 export default createContext;
 //# sourceMappingURL=index.d.ts.map

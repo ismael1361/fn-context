@@ -302,15 +302,14 @@ var Context = /*#__PURE__*/function (_SimpleEventEmitter2) {
       return /*#__PURE__*/_asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
         var _self$processLength$g, _self$processLength$g2;
         var contextId,
-          proxy,
           fnName,
+          proxy,
           result,
           error,
           _len,
           args,
           _key,
           length,
-          _self$events$contextI,
           _args = arguments;
         return _regeneratorRuntime().wrap(function _callee$(_context) {
           while (1) switch (_context.prev = _context.next) {
@@ -320,51 +319,53 @@ var Context = /*#__PURE__*/function (_SimpleEventEmitter2) {
                 self.contexts.set(contextId, new ContextValue(defaultValue !== null && defaultValue !== void 0 ? defaultValue : this._defaultValue));
               }
               self.processLength.set(contextId, ((_self$processLength$g = self.processLength.get(contextId)) !== null && _self$processLength$g !== void 0 ? _self$processLength$g : 0) + 1);
-              proxy = function proxy() {
-                return Promise.resolve();
-              };
               fnName = "_".concat(kContextIdFunctionPrefix, "_").concat(self.constextId, "_").concat(contextId, "_").concat(Date.now(), "__");
-              eval("proxy = async function ".concat(fnName, "(target, ...args){\n                    return await Promise.race([target.apply(this, args)]);\n                }"));
+              proxy = new Function("return function ".concat(fnName, "(self, target) {\n                    return Promise.race([target.apply(self, Array.from(arguments).slice(2))]);\n                };"))();
               result = undefined, error = undefined;
-              _context.prev = 7;
+              _context.prev = 6;
               for (_len = _args.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
                 args[_key] = _args[_key];
               }
-              _context.next = 11;
-              return proxy.call.apply(proxy, [this, target].concat(args));
-            case 11:
+              _context.next = 10;
+              return proxy.apply(void 0, [this, target].concat(args));
+            case 10:
               result = _context.sent;
-              _context.next = 17;
+              _context.next = 16;
               break;
-            case 14:
-              _context.prev = 14;
-              _context.t0 = _context["catch"](7);
+            case 13:
+              _context.prev = 13;
+              _context.t0 = _context["catch"](6);
               error = new Error(_context.t0);
-            case 17:
+            case 16:
               length = (_self$processLength$g2 = self.processLength.get(contextId)) !== null && _self$processLength$g2 !== void 0 ? _self$processLength$g2 : 0;
               if (length <= 1) {
-                self.contexts.delete(contextId);
-                self.processLength.delete(contextId);
-                ((_self$events$contextI = self.events[contextId]) !== null && _self$events$contextI !== void 0 ? _self$events$contextI : []).splice(0).forEach(function (_ref2) {
-                  var event = _ref2.event,
-                    callback = _ref2.callback;
-                  self.off(event, callback);
-                });
+                setTimeout(function () {
+                  var _self$events$contextI;
+                  self.contexts.delete(contextId);
+                  self.processLength.delete(contextId);
+                  ((_self$events$contextI = self.events[contextId]) !== null && _self$events$contextI !== void 0 ? _self$events$contextI : []).splice(0).forEach(function (_ref2) {
+                    var event = _ref2.event,
+                      callback = _ref2.callback;
+                    self.off(event, callback);
+                  });
+                }, 15000);
               } else {
                 self.processLength.set(contextId, length - 1);
               }
               return _context.abrupt("return", error instanceof Error ? Promise.reject(error) : result);
-            case 20:
+            case 19:
             case "end":
               return _context.stop();
           }
-        }, _callee, this, [[7, 14]]);
+        }, _callee, this, [[6, 13]]);
       }));
     }
   }, {
     key: "value",
     get: function get() {
-      return this.get();
+      var _this$contexts$get$va, _this$contexts$get;
+      var id = this.getContextId();
+      return (_this$contexts$get$va = (_this$contexts$get = this.contexts.get(id)) === null || _this$contexts$get === void 0 ? void 0 : _this$contexts$get.value) !== null && _this$contexts$get$va !== void 0 ? _this$contexts$get$va : this.defaultValue;
     },
     set: function set(value) {
       this.set(value);
@@ -427,14 +428,14 @@ var Context = /*#__PURE__*/function (_SimpleEventEmitter2) {
   }, {
     key: "get",
     value: function get() {
-      var _this$contexts$get$va, _this$contexts$get;
+      var _this$contexts$get$va2, _this$contexts$get2;
       var id = this.getContextId();
-      return (_this$contexts$get$va = (_this$contexts$get = this.contexts.get(id)) === null || _this$contexts$get === void 0 ? void 0 : _this$contexts$get.value) !== null && _this$contexts$get$va !== void 0 ? _this$contexts$get$va : this.defaultValue;
+      return (_this$contexts$get$va2 = (_this$contexts$get2 = this.contexts.get(id)) === null || _this$contexts$get2 === void 0 ? void 0 : _this$contexts$get2.value) !== null && _this$contexts$get$va2 !== void 0 ? _this$contexts$get$va2 : this.defaultValue;
     }
   }, {
     key: "set",
     value: function set(value) {
-      var _this$contexts$get$va2, _this$contexts$get2;
+      var _this$contexts$get$va3, _this$contexts$get3;
       var id = this.getContextId();
       var context = this.contexts.get(id);
       if (context) {
@@ -444,7 +445,7 @@ var Context = /*#__PURE__*/function (_SimpleEventEmitter2) {
         contextId: id,
         value: value
       });
-      return (_this$contexts$get$va2 = (_this$contexts$get2 = this.contexts.get(id)) === null || _this$contexts$get2 === void 0 ? void 0 : _this$contexts$get2.value) !== null && _this$contexts$get$va2 !== void 0 ? _this$contexts$get$va2 : value;
+      return (_this$contexts$get$va3 = (_this$contexts$get3 = this.contexts.get(id)) === null || _this$contexts$get3 === void 0 ? void 0 : _this$contexts$get3.value) !== null && _this$contexts$get$va3 !== void 0 ? _this$contexts$get$va3 : value;
     }
   }, {
     key: "assignValue",

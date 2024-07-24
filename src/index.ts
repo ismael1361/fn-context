@@ -56,7 +56,7 @@ const cloneValue = <T>(obj: T, seen: Map<any, any> = new Map()): T => {
 	return obj;
 };
 
-interface SimpleEventEmitterProperty {
+export interface SimpleEventEmitterProperty {
 	stop: () => void;
 }
 
@@ -169,7 +169,7 @@ class ContextValue<T, C extends Object> {
 	}
 }
 
-interface ContextOptions {
+export interface ContextOptions {
 	individual: boolean;
 }
 
@@ -268,32 +268,31 @@ class Context<
 			}
 			self.processLength.set(contextId, (self.processLength.get(contextId) ?? 0) + 1);
 
-			let proxy: (this: any, t: (...args: A) => Promise<R> | R, ...a: A) => Promise<R> = () => Promise.resolve() as any;
-
 			const fnName = `_${kContextIdFunctionPrefix}_${self.constextId}_${contextId}_${Date.now()}__`;
 
-			eval(
-				`proxy = async function ${fnName}(target, ...args){
-                    return await Promise.race([target.apply(this, args)]);
-                }`,
-			);
+			const proxy: (self: any, t: (...args: A) => Promise<R> | R, ...a: A) => Promise<R> =
+				new Function(`return function ${fnName}(self, target) {
+                    return Promise.race([target.apply(self, Array.from(arguments).slice(2))]);
+                };`)();
 
 			let result: R | undefined = undefined,
 				error: Error | undefined = undefined;
 
 			try {
-				result = await (proxy as any).call(this, target, ...args);
+				result = await proxy(this, target, ...args);
 			} catch (e) {
 				error = new Error(e as any);
 			}
 
 			const length = self.processLength.get(contextId) ?? 0;
 			if (length <= 1) {
-				self.contexts.delete(contextId);
-				self.processLength.delete(contextId);
-				(self.events[contextId] ?? []).splice(0).forEach(({ event, callback }) => {
-					self.off(event as any, callback);
-				});
+				setTimeout(() => {
+					self.contexts.delete(contextId);
+					self.processLength.delete(contextId);
+					(self.events[contextId] ?? []).splice(0).forEach(({ event, callback }) => {
+						self.off(event as any, callback);
+					});
+				}, 15000);
 			} else {
 				self.processLength.set(contextId, length - 1);
 			}
@@ -302,8 +301,9 @@ class Context<
 		};
 	}
 
-	get value() {
-		return this.get();
+	get value(): T {
+		const id = this.getContextId();
+		return this.contexts.get(id)?.value ?? this.defaultValue;
 	}
 
 	set value(value: T) {
@@ -422,6 +422,13 @@ class Context<
 	}
 }
 
+export type createContext<
+	T,
+	C extends Object = {
+		[key: string]: any;
+	},
+> = Pick<Context<T, C>, "defaultValue" | "provider" | "value" | "id" | "getId" | "cache" | "get" | "set" | "assignValue" | "proxyValue">;
+
 /**
  * Cria um novo contexto com um valor padrão.
  *
@@ -454,7 +461,7 @@ export function createContext<
 	C extends Object = {
 		[key: string]: any;
 	},
->(defaultValue: T, options: Partial<ContextOptions> = {}): Context<T, C> {
+>(defaultValue: T, options: Partial<ContextOptions> = {}): createContext<T, C> {
 	return new Context<T, C>(defaultValue, options);
 }
 
